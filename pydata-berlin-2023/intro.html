@@ -1,0 +1,119 @@
+  <!--
+
+
+-->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>pandas 2.0 and beyond</title>
+    <meta charset="utf-8">
+      <link rel="stylesheet" type="text/css" href="slides.css">
+      <link rel="stylesheet" type="text/css" href="abs-layout.css" />
+      <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.min.css" />
+
+<!--    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono';   }
+      #slideshow .slide .content .cols.two .col { width: 48%; }
+    </style>
+-->
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+![:scale 40%](img/pandas.svg)
+
+# pandas 2.0 and beyond
+
+### Copy-on-Write, Arrow-backed DataFrames and more
+
+Joris Van den Bossche (Voltron Data), Patrick Hoefler (Coiled)<br>
+PyConDE & PyData Berlin, April 17, 2023
+
+https://github.com/jorisvandenbossche/<br>
+[@jorisvdbossche](https://twitter.com/jorisvdbossche)/<br>
+https://github.com/phofl/<br>
+
+
+---
+
+# About Joris
+
+Joris Van den Bossche
+<div style="margin-bottom:-20px"></div>
+
+- Background: PhD bio-science engineer, air quality research
+- Open source enthusiast: pandas core dev, geopandas maintainer, scikit-learn contributor
+- Currently working part-time at Voltron Data on Apache Arrow
+
+https://github.com/jorisvandenbossche   Twitter: [@jorisvdbossche](https://twitter.com/jorisvdbossche)
+
+
+.affiliations[
+  ![:scale 30%](img/apache-arrow.png)
+  ![:scale 64%](img/voltrondata-logo-green.png)
+]
+
+---
+
+# About Patrick
+
+Patrick Hoefler
+<div style="margin-bottom:-20px"></div>
+
+- Background: M.Sc. in Mathematics
+- Open source: pandas core dev
+- Currently working at Coiled on Dask
+
+https://github.com/phofl
+
+
+.affiliations[
+  ![:scale 20%](img/dask.png)
+  ![:scale 30%](img/coiled.png)
+]
+---
+
+class: center, middle
+
+# pandas 2.0 and beyond
+
+### Copy-on-Write, Arrow-backed DataFrames and more
+
+---
+
+    </textarea>
+<!--    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+    </script>-->
+    <script src="../remark-0.15.min.js" type="text/javascript">
+    </script>
+    <script>
+	    remark.macros.scale = function (percentage) {
+          var url = this;
+          return '<img src="' + url + '" style="width: ' + percentage + '" />';
+      };
+      remark.macros.scaleH = function (percentage) {
+          var url = this;
+          return '<img src="' + url + '" style="height: ' + percentage + '" />';
+      };
+      config_remark = {
+        highlightStyle: 'github',
+        highlightSpans: true,
+        highlightLines: true,
+        ratio: "16:9",
+      };
+      var slideshow = remark.create(config_remark);
+    </script>
+  </body>
+</html>
