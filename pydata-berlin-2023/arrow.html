@@ -36,513 +36,165 @@ count: false
 
 # Arrow-backed DataFrames
 
-TODO
+Using PyArrow arrays to store the data of a DataFrame.
 
 
 ---
 
-## Examples: filtering rows with a boolean mask
+## ArrowDtype
+
+`pd.ArrowDtype` or `f"{dtype}[pyarrow]"` creates Arrow-backed columns
 
 ```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[df["A"] > 1]
->>> subset.loc[1, "A"] = 10
-# SettingWithCopyWarning:
-# A value is trying to be set on a copy of a slice from a DataFrame.
-# Try using .loc[row_indexer,col_indexer] = value instead
-#
-# See the caveats in the documentation: ...
+>>> import pyarrow as pa
+>>> pd.Series([1, 2, 3], dtype=pd.ArrowDtype(pa.int64()))
+0   1
+1   2
+2   3
+dtype: int64[pyarrow]
+
+>>> pd.Series([1, 2, 3], dtype="int64[pyarrow]")
+0   1
+1   2
+2   3
+dtype: int64[pyarrow]
 ```
 
+These columns use the PyArrow memory layout and compute functionality.
 
-Did `df` change as well?
+---
 
+## Dispatching to pyarrow.compute
+
+The ExtensionArray interface of pandas dispatches to
+[compute functions of PyArrow](https://arrow.apache.org/docs/python/compute.html).
+
+```python
+In [3]: ser = pd.Series(np.random.randint(1, 100, (5_000_000, )))
+```
+--
+count: false
+```python
+In [4]: %timeit ser.unique()
+10.6 ms ± 31.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+```
 --
 count: false
 
-.larger[➔ No!]
-
----
-
-## Examples: slicing rows
-
 ```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[1:2]
->>> subset.loc[1, "A"] = 10
-# SettingWithCopyWarning:
-# A value is trying to be set on a copy of a slice from a DataFrame.
-# Try using .loc[row_indexer,col_indexer] = value instead
-#
-# See the caveats in the documentation: ...
-```
+In [5]: ser_arrow = ser.astype(pd.ArrowDtype(pa.int64()))
 
-Did `df` change as well?
-
---
-count: false
-
-.larger[➔ Yes!]
-
-
----
-
-## Examples: subsetting columns
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[["A", "B"]]
->>> subset.loc[1, "A"] = 10
-# SettingWithCopyWarning:
-# A value is trying to be set on a copy of a slice from a DataFrame.
-# Try using .loc[row_indexer,col_indexer] = value instead
-#
-# See the caveats in the documentation: ...
-```
-
-Did `df` change as well?
-
---
-count: false
-
-.larger[➔ No!]
-
----
-
-## Examples: selecting a single column
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df["A"]
->>> subset[1] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-.larger[➔ Yes!]
-
-
-
----
-
-# Current situation
-
-Problems with the current copy / view semantics of pandas:
-
-- This is confusing for many users
-- You need to be aware of copy/view details of numpy
-- You need defensive (and unncecessary) copying to avoid the warning
-
-
-???
-
-Copies and views in NumPy
-
-explain a view in numpy
-
-slicing gives view, mask gives copy
-
-
----
-
-# The SettingWithCopyWarning
-
-To avoid "chained assignment (setitem)" pitfalls:
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
->>> df["C"][df["A"] > 1] = 10  # this works
->>> df[df["A"] > 1]["C"] = 10  # this doesn't work
+In [6]: %timeit ser_arrow.unique()
+6.71 ms ± 6.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
 ```
 
 --
 count: false
 
-Rewriting the second case:
+&rarr; PyArrow can provide a significant performance improvement
+
+Not every method of pandas supports the compute functionality of PyArrow yet.
+
+---
+
+## PyArrow dtypes
+
+PyArrow offers support for a wide variety of dtypes.
+
+.larger[Benefits]
+
+- Support of missing value indicators in every datatype
 
 ```python
->>> temp = df[df["A"] > 1]
->>> temp["C"] = 10
+>>> pd.Series([1, None], dtype="int64[pyarrow]")
+0       1
+1    <NA>
+dtype: int64[pyarrow]
 ```
 
---
-count: false
+- An efficient string-datatype implementation
+- Bytes, decimal, explicit null-datatype and [many more](https://arrow.apache.org/docs/python/api/datatypes.html#data-types-and-schemas).
 
-Our previous example:
+---
+
+
+## PyArrow string dtype
+
+PyArrow offers fast and efficient in-memory string operations.
+
+pandas implements PyArrow-based string operations through `"string[pyarrow]"` or `pd.ArrowDtype(pa.string())`.
+
+These implementations provide
+
+- significantly improved performance compared to NumPy's object dtype
+- smaller memory footprint (around 50% reduction)
+
+---
+## Opting into Arrow-backed DataFrames
+
+Most I/O methods gained a new `dtype_backend` keyword to convert  the input data to Arrow datatypes during reading.
 
 ```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
->>> subset = df[df["A"] > 1]
-...
->>> subset["C"] = 10
+>>> data = """a,b,c\n1,1.5,x\n,2.5,y"""
+
+>>> df = pd.read_csv(StringIO(data), dtype_backend="pyarrow")
+>>> df
+      a    b  c
+0     1  1.5  x
+1  <NA>  2.5  y
+
+>>> df.dtypes
+a     int64[pyarrow]
+b    double[pyarrow]
+c    string[pyarrow]
+dtype: object
 ```
 
----
-
-# The SettingWithCopyWarning
-
-How to "solve" the warning?
-
---
-count: false
-
-I want do update `df` -> setitem in one go
-
-```python
->>> df[df["A"] > 1]["C"] = 10      # this doesn't work
->>> df`.loc[df["A"] > 1, "C"]` = 10  # this works
-```
-
-Or use `.assign(A=...)` method instead.
-
---
-count: false
-
-I don't want to update `df` -> explicit (unnecessary) `copy()`
-
-```python
->>> subset = df[df["A"] > 1]`.copy()`
-...
->>> subset["C"] = 10
-```
+`.convert_dtypes(dtype_backend="pyarrow")` can be used, if a function does not support the `dtype_backend` keyword yet.
 
 ---
 
-# Current situation
 
-Problems with the current copy / view semantics of pandas:
+## Speeding up I/O operations with PyArrow engine
 
-- This is confusing for many users
-- You need to be aware of copy/view details of numpy
-- **You need defensive (and unncecessary) copying to avoid the warning**
+Some I/O functions gained an `engine` keyword to parse the input with PyArrow.
 
+- `read_csv` and `read_json` can dispatch to PyArrow readers.
+- `read_parquet` and `read_orc` use PyArrow natively to read the input.
 
----
+.larger[Benefits]
 
-## Intermezzo: copies and method chaining
-
-.center[
-![:scale 60%](img/tweet-matt-harrison.png)
-]
+- Huge [performance improvements](https://datapythonista.me/blog/pandas-with-hundreds-of-millions-of-rows)
+- Multithreading
+- Zero-copy when using Arrow-backed DataFrames
 
 ---
 
-## Intermezzo: copies and method chaining
+## WARNING: Arrow support is still experimental
 
-Which steps of this workflow copy the DataFrame?
+It is still early in adopting PyArrow dtypes and PyArrow-backed DataFrames.
 
-```python
-(df
-  .rename(columns=lambda col: col.replace(".", "_"))
-  .assign(team_size=lambda df_: df_.team_size.replace(...))
-  .astype({'employment_status': "category", ...})
-  .drop(columns=[...])
-  .dropna(subset="year")
-  .reset_index()
-)
-```
+.larger[This means:]
 
+- The Arrow-backend is not yet supported everywhere.
 
----
-count: false
+  - Can lead to performance problems
+  - Potential bugs
+  - `GroupBy` and `merge` are popular examples.
 
-## Intermezzo: copies and method chaining
-
-Which steps of this workflow copy the DataFrame?
-
-```python
-(df
-* .rename(columns=lambda col: col.replace(".", "_"))
-* .assign(team_size=lambda df_: df_.team_size.replace(...))
-* .astype({'employment_status': "category", ...})
-* .drop(columns=[...])
-  .dropna(subset="year")
-* .reset_index()
-)
-```
-
---
-count: false
-
-The `inplace` keyword *sometimes* avoids the copy, but is not recommended.
+- Potential upstream bugs in Arrow itself that aren't addressed yet.
 
 ---
 
-# Can we do better?
+## Roadmap for PyArrow support
 
-A proposal for simplified behaviour using a single rule:
+* pandas will continue working on supporting PyArrow everywhere.
 
-> *Any DataFrame or Series derived from another in any way (e.g. with an indexing operation) always *behaves as* a copy.*
+  This goal is reached when PyArrow-dtypes and NumPy-dtypes are both equally well supported.
 
---
-count: false
+  Ensure support for new dtypes that are available (Decimal, bytes, ...).
 
-Or put differently, the implication is:
-
-> *Mutating a DataFrame only changes the object itself, and not any other.*
-
-> *If you want to change values in a DataFrame or Series, you can only do that by directly mutating the DataFrame/Series at hand*.
-
-
----
-
-# Can we do better?
-
-A proposal for simplified behaviour using a single rule:
-
-> *Any DataFrame or Series derived from another in any way (e.g. with an indexing operation) always *behaves as* a copy.*
-
-Advantages:
-
-- A simpler, more consistent user experience
-- We can get rid of the SettingWithCopyWarning (since there is no confusion about whether we are mutating a view or a copy)
-- We would no longer need defensive copying in many places in pandas, improving memory usage
-
----
-count: false
-
-# Can we do better?
-
-A proposal for simplified behaviour using a single rule:
-
-> *Any DataFrame or Series derived from another in any way (e.g. with an indexing operation) always *behaves as* a copy.*
-
-Advantages:
-
-- **A simpler, more consistent user experience**
-- We can get rid of the SettingWithCopyWarning (since there is no confusion about whether we are mutating a view or a copy)
-- We would no longer need defensive copying in many places in pandas, improving memory usage
-
----
-
-## Examples: filtering rows with a boolean mask
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[df["A"] > 1]
->>> subset.loc[1, "A"] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-No, `subset` is a different object, so mutating `subset` does not change `df`.
-
----
-
-## Examples: slicing rows
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[1:2]
->>> subset.loc[1, "A"] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-No, `subset` is a different object, so mutating `subset` does not change `df`.
-
----
-
-## Examples: subsetting columns
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[["A", "B"]]
->>> subset.loc[1, "A"] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-No, `subset` is a different object, so mutating `subset` does not change `df`.
-
----
-
-## Examples: selecting a single column
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df["A"]
->>> subset[1] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-No, `subset` is a different object, so mutating `subset` does not change `df`.
-
----
-
-# Can we do better?
-
-A proposal for simplified behaviour using a single rule:
-
-> *Any DataFrame or Series derived from another in any way (e.g. with an indexing operation) always *behaves as* a copy.*
-
-Advantages:
-
-- A simpler, more consistent user experience
-- **We can get rid of the SettingWithCopyWarning** (since there is no confusion about whether we are mutating a view or a copy)
-- We would no longer need defensive copying in many places in pandas, improving memory usage
-
----
-
-# The SettingWithCopyWarning
-
-With current pandas:
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-# two examples of chained assignment
->>> df["C"][df["A"] > 1] = 10  # this works
->>> df[df["A"] > 1]["C"] = 10  # this doesn't work
-```
-
---
-count: false
-
-With proposal: both examples don't work
-
---
-count: false
-
-```python
->>> temp = df["C"]
->>> temp[temp["A"] > 1] = 10
-```
-
-Chained assignment will never work -> we don't need a warning.
-
----
-
-# The SettingWithCopyWarning
-
-With current pandas:
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
->>> subset = df[df["A"] > 1]`.copy()`
-...
->>> subset["C"] = 10
-```
-
-With proposal: additional `copy()` is no longer needed to avoid the warning.
-
----
-
-# Can we do better?
-
-A proposal for simplified behaviour using a single rule:
-
-> *Any DataFrame or Series derived from another in any way (e.g. with an indexing operation) always *<span class="remark-code-span-highlighted">behaves as</span>* a copy.*
-
-Advantages:
-
-- A simpler, more consistent user experience
-- We can get rid of the SettingWithCopyWarning (since there is no confusion about whether we are mutating a view or a copy)
-- **We would no longer need defensive copying in many places in pandas, improving memory usage**
-
----
-
-## Hiding copy/view details with Copy-on-Write
-
-Guarantee == "behaves as a copy"
-
-Copy-on-Write: usage of views becomes internal implementation detail
-
----
-## Hiding copy/view details with Copy-on-Write
-
-`subset = df[["A", "B"]]`
-
-.center[
-![:scale 60%](img/schema-copy-on-write-1.svg)
-]
-
---
-count: false
-
-Modify subset: `subset.loc[1, "A"] = 10` -> only copy data now
-
-.center[
-![:scale 60%](img/schema-copy-on-write-2.svg)
-]
-
----
-
-## Avoiding copies in method chaining
-
-Which steps of this workflow copy the DataFrame?
-
-```python
-(df
-  .rename(columns=lambda col: col.replace(".", "_"))
-  .assign(team_size=lambda df_: df_.team_size.replace(...))
-  .astype({'employment_status': "category", ...})
-  .drop(columns=[...])
-  .dropna(subset="year")
-  .reset_index()
-)
-```
-
----
-
-# Can we do better?
-
-A proposal for simplified behaviour using a single rule:
-
-> *Any DataFrame or Series derived from another in any way (e.g. with an indexing operation) always *behaves as* a copy.*
-
-Advantages:
-
-- A simpler, more consistent user experience
-- We can get rid of the SettingWithCopyWarning (since there is no confusion about whether we are mutating a view or a copy)
-- We would no longer need defensive copying in many places in pandas, improving memory usage
-
----
-
-# This is a proposal, not already in pandas
-
-Blogpost: https://jorisvandenbossche.github.io/blog/2022/04/07/pandas-copy-views/
-
-Full proposal: https://docs.google.com/document/d/1ZCQ9mx3LBMy-nhwRl33_jgcvWo9IWdEfxDNQ2thyTb0/edit#heading=h.iexejdstiz8u
-
-Related GitHub issue: https://github.com/pandas-dev/pandas/issues/36195
-
-
-## Feedback welcome!
-
----
-class: middle
-
-# Thanks for listening!
-
-
-### Those slides: https://github.com/jorisvandenbossche/talks/
-
-
-
----
-
-# The BlockManager
-
-Blogpost of Uwe Korn: *The one pandas internal I teach all my new colleagues: the BlockManager*
-
-https://uwekorn.com/2020/05/24/the-one-pandas-internal.html
-
+* Provide a way for users to opt into PyArrow-backed DataFrames globally.
 
 
 
