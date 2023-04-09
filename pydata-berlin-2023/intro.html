@@ -106,6 +106,9 @@ Using PyArrow arrays to store the data of a DataFrame.
 
 `pd.ArrowDtype` or `f"{dtype}[pyarrow]"` creates Arrow-backed columns
 
+--
+count: false
+
 ```python
 >>> import pyarrow as pa
 >>> pd.Series([1, 2, 3], dtype=pd.ArrowDtype(pa.int64()))
@@ -120,6 +123,9 @@ dtype: int64[pyarrow]
 2   3
 dtype: int64[pyarrow]
 ```
+
+--
+count: false
 
 These columns use the PyArrow memory layout and compute functionality.
 
@@ -152,7 +158,7 @@ In [6]: %timeit ser_arrow.unique()
 --
 count: false
 
-&rarr; PyArrow can provide a significant performance improvement
+.larger[&rarr;] PyArrow can provide a significant performance improvement
 
 Not every method of pandas supports the compute functionality of PyArrow yet.
 
@@ -161,6 +167,9 @@ Not every method of pandas supports the compute functionality of PyArrow yet.
 ## PyArrow dtypes
 
 PyArrow offers support for a wide variety of dtypes.
+
+--
+count: false
 
 .larger[Benefits]
 
@@ -172,8 +181,13 @@ PyArrow offers support for a wide variety of dtypes.
 1    <NA>
 dtype: int64[pyarrow]
 ```
-
+--
+count: false
 - An efficient string-datatype implementation
+
+--
+count: false
+
 - Bytes, decimal, explicit null-datatype and [many more](https://arrow.apache.org/docs/python/api/datatypes.html#data-types-and-schemas).
 
 ---
@@ -185,15 +199,29 @@ PyArrow offers fast and efficient in-memory string operations.
 
 pandas implements PyArrow-based string operations through `"string[pyarrow]"` or `pd.ArrowDtype(pa.string())`.
 
+--
+count: false
+
 These implementations provide
 
 - significantly improved performance compared to NumPy's object dtype
-- smaller memory footprint (around 50% reduction)
+- smaller memory footprint
+
+--
+count: false
+
+If the functionality does not exist in PyArrow
+
+- `"string[pyarrow]"` falls back to NumPy
+- `pd.ArrowDtype(pa.string())` raises.
 
 ---
 ## Opting into Arrow-backed DataFrames
 
 Most I/O methods gained a new `dtype_backend` keyword to convert  the input data to Arrow datatypes during reading.
+
+--
+count: false
 
 ```python
 >>> data = """a,b,c\n1,1.5,x\n,2.5,y"""
@@ -211,6 +239,9 @@ c    string[pyarrow]
 dtype: object
 ```
 
+--
+count: false
+
 `.convert_dtypes(dtype_backend="pyarrow")` can be used, if a function does not support the `dtype_backend` keyword yet.
 
 ---
@@ -222,6 +253,9 @@ Some I/O functions gained an `engine` keyword to parse the input with PyArrow.
 
 - `read_csv` and `read_json` can dispatch to PyArrow readers.
 - `read_parquet` and `read_orc` use PyArrow natively to read the input.
+
+--
+count: false
 
 .larger[Benefits]
 
@@ -235,6 +269,9 @@ Some I/O functions gained an `engine` keyword to parse the input with PyArrow.
 
 It is still early in adopting PyArrow dtypes and PyArrow-backed DataFrames.
 
+--
+count: false
+
 .larger[This means:]
 
 - The Arrow-backend is not yet supported everywhere.
@@ -243,17 +280,26 @@ It is still early in adopting PyArrow dtypes and PyArrow-backed DataFrames.
   - Potential bugs
   - `GroupBy` and `merge` are popular examples.
 
+--
+count: false
+
 - Potential upstream bugs in Arrow itself that aren't addressed yet.
 
 ---
 
 ## Roadmap for PyArrow support
 
+--
+count: false
+
 * pandas will continue working on supporting PyArrow everywhere.
 
   This goal is reached when PyArrow-dtypes and NumPy-dtypes are both equally well supported.
 
   Ensure support for new dtypes that are available (Decimal, bytes, ...).
+
+--
+count: false
 
 * Provide a way for users to opt into PyArrow-backed DataFrames globally.
 
@@ -263,7 +309,13 @@ It is still early in adopting PyArrow dtypes and PyArrow-backed DataFrames.
 
 pandas only supported Timestamps in nanosecond resolution up until 2.0
 
+--
+count: false
+
 .larger[&rarr;] Only dates between 1677 and 2262 can be represented
+
+--
+count: false
 
 ```python
 >>> pd.Timestamp("1000-01-01")
@@ -271,7 +323,13 @@ OutOfBoundsDatetime: Out of bounds nanosecond timestamp: 1000-01-01 00:00:00
 
 ```
 
+--
+count: false
+
 pandas 2.0 lifts this restriction!
+
+--
+count: false
 
 Timestamps can be created in the following units:
 
@@ -289,12 +347,18 @@ Nearest resolution is inferred:
 Timestamp('1000-01-01 00:00:00')
 ```
 
+--
+count: false
+
 Specify a higher precision to use a more accurate resolution:
 
 ```python
 >>> pd.Timestamp("1000-01-01 10:00:00.123456")
 Timestamp('1000-01-01 10:00:00.123456')
 ```
+
+--
+count: false
 
 `as_unit` can be used to convert between units:
 
@@ -307,9 +371,18 @@ Timestamp('1000-01-01 10:00:00.123456')
 
 ## Some caveats
 
+--
+count: false
+
 - Non-nanosecond support is still new and is actively developed!
 
+--
+count: false
+
 - Not every part of the API support non-nanosecond resolutions yet.
+
+--
+count: false
 
 - Comparing two arrays with differing resolutions is still relatively slow.
 
