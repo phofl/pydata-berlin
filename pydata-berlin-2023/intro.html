@@ -93,6 +93,226 @@ class: center, middle
 
 ---
 
+count: false
+
+# Arrow-backed DataFrames
+
+Using PyArrow arrays to store the data of a DataFrame.
+
+
+---
+
+## ArrowDtype
+
+`pd.ArrowDtype` or `f"{dtype}[pyarrow]"` creates Arrow-backed columns
+
+```python
+>>> import pyarrow as pa
+>>> pd.Series([1, 2, 3], dtype=pd.ArrowDtype(pa.int64()))
+0   1
+1   2
+2   3
+dtype: int64[pyarrow]
+
+>>> pd.Series([1, 2, 3], dtype="int64[pyarrow]")
+0   1
+1   2
+2   3
+dtype: int64[pyarrow]
+```
+
+These columns use the PyArrow memory layout and compute functionality.
+
+---
+
+## Dispatching to pyarrow.compute
+
+The ExtensionArray interface of pandas dispatches to
+[compute functions of PyArrow](https://arrow.apache.org/docs/python/compute.html).
+
+```python
+In [3]: ser = pd.Series(np.random.randint(1, 100, (5_000_000, )))
+```
+--
+count: false
+```python
+In [4]: %timeit ser.unique()
+10.6 ms ± 31.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+```
+--
+count: false
+
+```python
+In [5]: ser_arrow = ser.astype(pd.ArrowDtype(pa.int64()))
+
+In [6]: %timeit ser_arrow.unique()
+6.71 ms ± 6.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+```
+
+--
+count: false
+
+&rarr; PyArrow can provide a significant performance improvement
+
+Not every method of pandas supports the compute functionality of PyArrow yet.
+
+---
+
+## PyArrow dtypes
+
+PyArrow offers support for a wide variety of dtypes.
+
+.larger[Benefits]
+
+- Support of missing value indicators in every datatype
+
+```python
+>>> pd.Series([1, None], dtype="int64[pyarrow]")
+0       1
+1    <NA>
+dtype: int64[pyarrow]
+```
+
+- An efficient string-datatype implementation
+- Bytes, decimal, explicit null-datatype and [many more](https://arrow.apache.org/docs/python/api/datatypes.html#data-types-and-schemas).
+
+---
+
+
+## PyArrow string dtype
+
+PyArrow offers fast and efficient in-memory string operations.
+
+pandas implements PyArrow-based string operations through `"string[pyarrow]"` or `pd.ArrowDtype(pa.string())`.
+
+These implementations provide
+
+- significantly improved performance compared to NumPy's object dtype
+- smaller memory footprint (around 50% reduction)
+
+---
+## Opting into Arrow-backed DataFrames
+
+Most I/O methods gained a new `dtype_backend` keyword to convert  the input data to Arrow datatypes during reading.
+
+```python
+>>> data = """a,b,c\n1,1.5,x\n,2.5,y"""
+
+>>> df = pd.read_csv(StringIO(data), dtype_backend="pyarrow")
+>>> df
+      a    b  c
+0     1  1.5  x
+1  <NA>  2.5  y
+
+>>> df.dtypes
+a     int64[pyarrow]
+b    double[pyarrow]
+c    string[pyarrow]
+dtype: object
+```
+
+`.convert_dtypes(dtype_backend="pyarrow")` can be used, if a function does not support the `dtype_backend` keyword yet.
+
+---
+
+
+## Speeding up I/O operations with PyArrow engine
+
+Some I/O functions gained an `engine` keyword to parse the input with PyArrow.
+
+- `read_csv` and `read_json` can dispatch to PyArrow readers.
+- `read_parquet` and `read_orc` use PyArrow natively to read the input.
+
+.larger[Benefits]
+
+- Huge [performance improvements](https://datapythonista.me/blog/pandas-with-hundreds-of-millions-of-rows)
+- Multithreading
+- Zero-copy when using Arrow-backed DataFrames
+
+---
+
+## WARNING: Arrow support is still experimental
+
+It is still early in adopting PyArrow dtypes and PyArrow-backed DataFrames.
+
+.larger[This means:]
+
+- The Arrow-backend is not yet supported everywhere.
+
+  - Can lead to performance problems
+  - Potential bugs
+  - `GroupBy` and `merge` are popular examples.
+
+- Potential upstream bugs in Arrow itself that aren't addressed yet.
+
+---
+
+## Roadmap for PyArrow support
+
+* pandas will continue working on supporting PyArrow everywhere.
+
+  This goal is reached when PyArrow-dtypes and NumPy-dtypes are both equally well supported.
+
+  Ensure support for new dtypes that are available (Decimal, bytes, ...).
+
+* Provide a way for users to opt into PyArrow-backed DataFrames globally.
+
+---
+
+# Non-nanosecond resolution in Timestamps
+
+pandas only supported Timestamps in nanosecond resolution up until 2.0
+
+.larger[&rarr;] Only dates between 1677 and 2262 can be represented
+
+```python
+>>> pd.Timestamp("1000-01-01")
+OutOfBoundsDatetime: Out of bounds nanosecond timestamp: 1000-01-01 00:00:00
+
+```
+
+pandas 2.0 lifts this restriction!
+
+Timestamps can be created in the following units:
+
+- `seconds`
+- `milliseconds`
+- `microseconds`
+---
+
+## How to enable the new resolutions
+
+Nearest resolution is inferred:
+
+```python
+>>> pd.Timestamp("1000-01-01")
+Timestamp('1000-01-01 00:00:00')
+```
+
+Specify a higher precision to use a more accurate resolution:
+
+```python
+>>> pd.Timestamp("1000-01-01 10:00:00.123456")
+Timestamp('1000-01-01 10:00:00.123456')
+```
+
+`as_unit` can be used to convert between units:
+
+```python
+>>> pd.Timestamp("1000-01-01").as_unit("us").unit
+'us'
+```
+
+---
+
+## Some caveats
+
+- Non-nanosecond support is still new and is actively developed!
+
+- Not every part of the API support non-nanosecond resolutions yet.
+
+- Comparing two arrays with differing resolutions is still relatively slow.
+
     </textarea>
 <!--    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
     </script>-->
