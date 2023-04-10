@@ -100,59 +100,23 @@ class: center, middle
 ### a.k.a. Getting rid of the SettingWithCopyWarning
 
 ---
-class: center, middle
 
-![](img/settingwithcopywarning.png)
+# Current situation: SettingWithCopyWarning
 
----
-class: center, middle, animated, heartBeat
-
-![](img/scream.png)
-
----
-
-.abs-layout[
-  ![](img/blogpost_screenshot_1.png)
-]
-
---
-count:false
-
-.abs-layout.bottom-1.right-50.width-20[
-  ![](img/blogpost_screenshot_2.png)
-]
-
---
-count:false
-
-.abs-layout.top-1.right-50.width-20[
-  ![](img/blogpost_screenshot_3.png)
-]
-
---
-count:false
-
-.abs-layout.bottom-1.left-0.width-20[
-  ![](img/blogpost_screenshot_4.png)
-]
-
---
-count:false
-
-.abs-layout[
-  ![](img/blogpost_screenshot_5.png)
-]
-
---
-count:false
-
-.abs-layout.bottom-1.right-50.width-20[
-  ![](img/blogpost_screenshot_6.png)
-]
+```python
+>>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
+>>> subset = df[df["A"] > 1]
+>>> subset.loc[1, "A"] = 10
+# SettingWithCopyWarning: 
+# A value is trying to be set on a copy of a slice from a DataFrame.
+# Try using .loc[row_indexer,col_indexer] = value instead
+#
+# See the caveats in the documentation: ...
+```
 
 ---
 
-# Copy vs view
+# Current situation: copy vs view
 
 .center[
 ![:scale 80%](img/view-vs-copy.png)
@@ -161,103 +125,14 @@ count:false
 Images from https://www.dataquest.io/blog/settingwithcopywarning/
 
 ---
-count: false
 
-# Copy vs view
+# Current situation: copy vs view
 
 .center[
 ![:scale 80%](img/view-vs-copy-modifying.png)
 ]
 
 Images from https://www.dataquest.io/blog/settingwithcopywarning/
-
-
----
-
-## Examples: filtering rows with a boolean mask
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[df["A"] > 1]
->>> subset.loc[1, "A"] = 10
-# SettingWithCopyWarning: 
-# A value is trying to be set on a copy of a slice from a DataFrame.
-# Try using .loc[row_indexer,col_indexer] = value instead
-#
-# See the caveats in the documentation: ...
-```
-
-
-Did `df` change as well? 
-
---
-count: false
-
-.larger[➔ No!]
-
----
-
-## Examples: slicing rows
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[1:2]
->>> subset.loc[1, "A"] = 10
-# SettingWithCopyWarning: 
-# A value is trying to be set on a copy of a slice from a DataFrame.
-# Try using .loc[row_indexer,col_indexer] = value instead
-#
-# See the caveats in the documentation: ...
-```
-
-Did `df` change as well?
-
---
-count: false
-
-.larger[➔ Yes!]
-
-
----
-
-## Examples: subsetting columns
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[["A", "B"]]
->>> subset.loc[1, "A"] = 10
-# SettingWithCopyWarning: 
-# A value is trying to be set on a copy of a slice from a DataFrame.
-# Try using .loc[row_indexer,col_indexer] = value instead
-#
-# See the caveats in the documentation: ...
-```
-
-Did `df` change as well?
-
---
-count: false
-
-.larger[➔ No!]
-
----
-
-## Examples: selecting a single column
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df["A"]
->>> subset[1] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-.larger[➔ Yes!]
-
-
 
 ---
 
@@ -352,15 +227,6 @@ Problems with the current copy / view semantics of pandas:
 - You need to be aware of copy/view details of numpy
 - **You need defensive (and unncecessary) copying to avoid the warning**
 
-
----
-
-## Intermezzo: copies and method chaining
-
-.center[
-![:scale 60%](img/tweet-matt-harrison.png)
-]
-
 ---
 
 ## Intermezzo: copies and method chaining
@@ -377,7 +243,6 @@ Which steps of this workflow copy the DataFrame?
   .reset_index()
 )
 ```
-
 
 ---
 count: false
@@ -596,39 +461,53 @@ Guarantee == "behaves as a copy"
 
 Copy-on-Write: usage of views becomes internal implementation detail
 
+-> We can avoid copies by default using Copy-on-Write!
+
+--
+
+**Small benchmark**: create DataFrame of 2 million rows and 30 columns (mix of float, ints and strings)
+```python
+import pandas as pd
+import numpy as np
+
+N = 2_000_000
+int_df = pd.DataFrame(np.random.randint(1, 100, (N, 10)), columns=[f"col_{i}" for i in range(10)])
+float_df = pd.DataFrame(np.random.random((N, 10)), columns=[f"col_{i}" for i in range(10, 20)])
+str_df = pd.DataFrame("a", index=range(N), columns=[f"col_{i}" for i in range(20, 30)])
+
+df = pd.concat([int_df, float_df, str_df], axis=1)
+```
+
 ---
+
 ## Hiding copy/view details with Copy-on-Write
 
-`subset = df[["A", "B"]]`
+Guarantee == "behaves as a copy"
 
-.center[
-![:scale 60%](img/schema-copy-on-write-1.svg)
-]
+Copy-on-Write: usage of views becomes internal implementation detail
 
+-> We can avoid copies by default using Copy-on-Write!
+
+```python
+%%timeit
+(df.rename(columns={"col_1": "new_index"})
+   .assign(sum_val=df["col_1"] + df["col_2"])
+   .drop(columns=["col_10", "col_20"])
+   .astype({"col_5": "int32"})
+   .reset_index()
+   .set_index("new_index")
+)
+```
+
+```
+2.45 s ± 293 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+```
 --
 count: false
 
-Modify subset: `subset.loc[1, "A"] = 10` -> only copy data now
-
-.center[
-![:scale 60%](img/schema-copy-on-write-2.svg)
-]
-
----
-
-## Avoiding copies in method chaining
-
-Which steps of this workflow copy the DataFrame?
-
-```python
-(df
-  .rename(columns=lambda col: col.replace(".", "_"))
-  .assign(team_size=lambda df_: df_.team_size.replace(...))
-  .astype({'employment_status': "category", ...})
-  .drop(columns=[...])
-  .dropna(subset="year")
-  .reset_index()
-)
+```
+# with Copy-on-Write enabled
+*13.7 ms ± 286 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
 ```
 
 ---
@@ -647,9 +526,9 @@ Advantages:
 
 ---
 
-# This is proposed behaviour, not yet the default in pandas
+# How do I try this?
 
-But you can try it out and provide feedback! (pandas >= 1.5)
+Enable it in pandas 2.0:
 
 ```
 import pandas as pd
@@ -664,8 +543,6 @@ More details:
 
 
 ## Feedback welcome!
-
-
 
 
 ---
