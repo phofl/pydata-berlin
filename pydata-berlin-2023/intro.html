@@ -512,6 +512,47 @@ count: false
 
 ---
 
+## Hiding copy/view details with Copy-on-Write
+
+When an operations makes an actual copy of the data (e.g. `df2 = df1.copy()`)
+
+.center[
+![:scale 60%](img/copy-on-write_copy.svg)
+]
+
+---
+## Hiding copy/view details with Copy-on-Write
+
+When an operations gives a view (e.g. `df2 = df1.reset_index()`)
+
+.center[
+![:scale 60%](img/copy-on-write_view.svg)
+]
+
+
+---
+## Hiding copy/view details with Copy-on-Write
+
+Modifying a view or its parent (`df1` or `df2`) will trigger a copy (a "copy on write"), and each DataFrame now owns its own memory.
+
+.center[
+![:scale 60%](img/copy-on-write_modified.svg)
+]
+
+
+---
+## Hiding copy/view details with Copy-on-Write
+
+Do you want to avoid this copy when modifying `df2`, and no longer need `df1`? 
+You can for example reassign to the same variable (`df1 = df1.reset_index()`, such that the original `df1` goes out of scope.
+
+.center[
+![:scale 60%](img/copy-on-write_reassign.svg)
+]
+
+
+---
+
 # Can we do better?
 
 A proposal for simplified behaviour using a single rule:
