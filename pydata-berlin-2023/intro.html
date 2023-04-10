@@ -91,6 +91,118 @@ class: center, middle
 
 ### Copy-on-Write, Arrow-backed DataFrames and more
 
+---
+
+# pandas 2.0 released on April 3rd!
+
+New features:
+
+- Index backed by all NumPy dtypes
+- Non-nanosecond datetime resolutions
+- Consistent datetime parsing
+
+New experimental features:
+
+- Copy-on-Write option
+- Arrow-backed DataFrames
+
+---
+
+# Non-nanosecond resolution in Timestamps
+
+pandas only supported Timestamps in nanosecond resolution up until 2.0
+
+--
+count: false
+
+.larger[&rarr;] Only dates between 1677 and 2262 can be represented
+
+--
+count: false
+
+```python
+>>> pd.Timestamp("1000-01-01")
+OutOfBoundsDatetime: Out of bounds nanosecond timestamp: 1000-01-01 00:00:00
+
+```
+
+--
+count: false
+
+pandas 2.0 lifts this restriction!
+
+--
+count: false
+
+Timestamps can be created in the following units:
+
+- `seconds`
+- `milliseconds`
+- `microseconds`
+- `nanoseconds`
+---
+
+## How to enable the new resolutions
+
+`as_unit` can be used to convert between units:
+
+```python
+>>> pd.Timestamp("1000-01-01").as_unit("us").unit
+'us'
+```
+
+# TODO: astype, np array
+
+---
+
+## Some caveats
+
+--
+count: false
+
+- Non-nanosecond support is still new and is actively developed!
+
+--
+count: false
+
+- Not every part of the API support non-nanosecond resolutions yet (`date_range`).
+
+--
+count: false
+
+- Comparing two arrays with differing resolutions is still relatively slow.
+
+
+---
+
+# PDEP-4: Consistent datetime parsing
+
+Old behaviour: when not specifying a specific format, each value was being
+parsed independently:
+
+```python
+>>> pd.to_datetime(['12-01-2000 00:00:00', '13-01-2000 00:00:00'])
+DatetimeIndex([`'2000-12-01', '2000-01-13'`], dtype='datetime64[ns]', freq=None)
+```
+
+--
+count: false
+
+New behaviour: if not `format` is specified, the format will be guessed from the first string and applied to all values
+
+```
+>>> pd.to_datetime(['12-01-2000 00:00:00', '13-01-2000 00:00:00'])
+...
+ValueError: time data "13-01-2000 00:00:00" doesn't match format "%m-%d-%Y %H:%M:%S", at position 1. You might want to try:
+    - passing \`format` if your strings have a consistent format;
+    - passing \`format='ISO8601'` if your strings are all ISO8601 but not necessarily in exactly the same format;
+    - passing \`format='mixed'`, and the format will be inferred for each element individually. You might want to use `dayfirst` alongside this.
+```
+
+--
+count: false
+
+Implemented in pandas 2.0! (full details: https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html)
 
 ---
 class: center, middle
@@ -226,46 +338,6 @@ Problems with the current copy / view semantics of pandas:
 - This is confusing for many users
 - You need to be aware of copy/view details of numpy
 - **You need defensive (and unncecessary) copying to avoid the warning**
-
----
-
-## Intermezzo: copies and method chaining
-
-Which steps of this workflow copy the DataFrame?
-
-```python
-(df
-  .rename(columns=lambda col: col.replace(".", "_"))
-  .assign(team_size=lambda df_: df_.team_size.replace(...))
-  .astype({'employment_status': "category", ...})
-  .drop(columns=[...])
-  .dropna(subset="year")
-  .reset_index()
-)
-```
-
----
-count: false
-
-## Intermezzo: copies and method chaining
-
-Which steps of this workflow copy the DataFrame?
-
-```python
-(df
-* .rename(columns=lambda col: col.replace(".", "_"))
-* .assign(team_size=lambda df_: df_.team_size.replace(...))
-* .astype({'employment_status': "category", ...})
-* .drop(columns=[...])
-  .dropna(subset="year")
-* .reset_index()
-)
-```
-
---
-count: false
-
-The `inplace` keyword *sometimes* avoids the copy, but is not recommended.
 
 ---
 
@@ -683,7 +755,7 @@ count: false
 --
 count: false
 
-- Bytes, decimal, explicit null-datatype and [many more](https://arrow.apache.org/docs/python/api/datatypes.html#data-types-and-schemas).
+- Bytes, decimal, explicit null-datatype, nested data and [many more](https://arrow.apache.org/docs/python/api/datatypes.html#data-types-and-schemas).
 
 ---
 
@@ -798,89 +870,6 @@ count: false
 
 * Provide a way for users to opt into PyArrow-backed DataFrames globally.
 
----
-
-# Non-nanosecond resolution in Timestamps
-
-pandas only supported Timestamps in nanosecond resolution up until 2.0
-
---
-count: false
-
-.larger[&rarr;] Only dates between 1677 and 2262 can be represented
-
---
-count: false
-
-```python
->>> pd.Timestamp("1000-01-01")
-OutOfBoundsDatetime: Out of bounds nanosecond timestamp: 1000-01-01 00:00:00
-
-```
-
---
-count: false
-
-pandas 2.0 lifts this restriction!
-
---
-count: false
-
-Timestamps can be created in the following units:
-
-- `seconds`
-- `milliseconds`
-- `microseconds`
----
-
-## How to enable the new resolutions
-
-Nearest resolution is inferred:
-
-```python
->>> pd.Timestamp("1000-01-01")
-Timestamp('1000-01-01 00:00:00')
-```
-
---
-count: false
-
-Specify a higher precision to use a more accurate resolution:
-
-```python
->>> pd.Timestamp("1000-01-01 10:00:00.123456")
-Timestamp('1000-01-01 10:00:00.123456')
-```
-
---
-count: false
-
-`as_unit` can be used to convert between units:
-
-```python
->>> pd.Timestamp("1000-01-01").as_unit("us").unit
-'us'
-```
-
----
-
-## Some caveats
-
---
-count: false
-
-- Non-nanosecond support is still new and is actively developed!
-
---
-count: false
-
-- Not every part of the API support non-nanosecond resolutions yet.
-
---
-count: false
-
-- Comparing two arrays with differing resolutions is still relatively slow.
-
 
 ---
 
@@ -891,37 +880,6 @@ A PDEP is a proposal for a major change in pandas, in a similar way as a Python 
 See "PDEP-1: Purpose and guidelines" for the details: https://pandas.pydata.org/pdeps/0001-purpose-and-guidelines.html
 
 
-
----
-
-# PDEP-4: Consistent datetime parsing
-
-Old behaviour: when not specifying a specific format, each value was being
-parsed independently:
-
-```python
->>> pd.to_datetime(['12-01-2000 00:00:00', '13-01-2000 00:00:00'])
-DatetimeIndex([`'2000-12-01', '2000-01-13'`], dtype='datetime64[ns]', freq=None)
-```
-
---
-count: false
-
-New behaviour: if not `format` is specified, the format will be guessed from the first string and applied to all values
-
-```
->>> pd.to_datetime(['12-01-2000 00:00:00', '13-01-2000 00:00:00'])
-...
-ValueError: time data "13-01-2000 00:00:00" doesn't match format "%m-%d-%Y %H:%M:%S", at position 1. You might want to try:
-    - passing \`format` if your strings have a consistent format;
-    - passing \`format='ISO8601'` if your strings are all ISO8601 but not necessarily in exactly the same format;
-    - passing \`format='mixed'`, and the format will be inferred for each element individually. You might want to use `dayfirst` alongside this.
-```
-
---
-count: false
-
-Implemented in pandas 2.0! (full details: https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html)
 
 
 ---
