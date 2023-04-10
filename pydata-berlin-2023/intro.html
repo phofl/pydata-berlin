@@ -386,6 +386,58 @@ count: false
 
 - Comparing two arrays with differing resolutions is still relatively slow.
 
+
+---
+
+# Pandas Enhancement Proposals (PDEPs)
+
+A PDEP is a proposal for a major change in pandas, in a similar way as a Python PEP or a NumPy NEP.
+
+See "PDEP-1: Purpose and guidelines" for the details: https://pandas.pydata.org/pdeps/0001-purpose-and-guidelines.html
+
+
+
+---
+
+# PDEP-4: Consistent datetime parsing
+
+Old behaviour: when not specifying a specific format, each value was being
+parsed independently:
+
+```python
+>>> pd.to_datetime(['12-01-2000 00:00:00', '13-01-2000 00:00:00'])
+DatetimeIndex([`'2000-12-01', '2000-01-13'`], dtype='datetime64[ns]', freq=None)
+```
+
+--
+count: false
+
+New behaviour: if not `format` is specified, the format will be guessed from the first string and applied to all values
+
+```
+>>> pd.to_datetime(['12-01-2000 00:00:00', '13-01-2000 00:00:00'])
+...
+ValueError: time data "13-01-2000 00:00:00" doesn't match format "%m-%d-%Y %H:%M:%S", at position 1. You might want to try:
+    - passing \`format` if your strings have a consistent format;
+    - passing \`format='ISO8601'` if your strings are all ISO8601 but not necessarily in exactly the same format;
+    - passing \`format='mixed'`, and the format will be inferred for each element individually. You might want to use `dayfirst` alongside this.
+```
+
+--
+count: false
+
+Implemented in pandas 2.0! (full details: https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html)
+
+
+---
+
+# PDEP-8: In-place methods in pandas
+
+Proposal to:
+
+- The ``inplace`` parameter will be removed from any methods that never can be done inplace
+
+
     </textarea>
 <!--    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
     </script>-->
