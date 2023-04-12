@@ -665,8 +665,12 @@ count: false
 # Arrow-backed DataFrames
 
 Using PyArrow arrays to store the data of a DataFrame.
+.center[
+![:scale 100%](img/pandas_arrow.svg)
+]
 
-
+ _ __Apache Arrow__ defines a language-independent columnar memory format for flat and hierarchical data, organized_
+_for efficient analytic operations on modern hardware like CPUs and GPUs._
 ---
 
 ## ArrowDtype
@@ -782,6 +786,55 @@ If the functionality does not exist in PyArrow
 - `"string[pyarrow]"` falls back to NumPy
 - `pd.ArrowDtype(pa.string())` raises.
 
+---
+
+## Let's look at some performance comparisons
+
+```python
+import string
+import random
+
+import pandas as pd
+
+
+def random_string() -> str:
+    return "".join(random.choices(string.printable, k=random.randint(10, 100)))
+
+
+ser_object = pd.Series([random_string() for _ in range(1_000_000)])
+ser_string = ser_object.astype("string[pyarrow]")
+```
+
+---
+
+## Let's look at some performance comparisons
+
+--
+count: false
+
+### str.length
+
+```python
+In[1]: %timeit ser_object.str.len()
+118 ms ± 260 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+In[2]: %timeit ser_string.str.len()
+24.2 ms ± 187 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+```
+
+--
+count: false
+
+### str.startswith
+
+```python
+In[3]: %timeit ser_object.str.startswith("a")
+136 ms ± 300 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+In[4]: %timeit ser_string.str.startswith("a")
+11 ms ± 19.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+```
 ---
 ## Opting into Arrow-backed DataFrames
 
