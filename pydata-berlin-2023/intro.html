@@ -144,14 +144,52 @@ Timestamps can be created in the following units:
 
 ## How to enable the new resolutions
 
-`as_unit` can be used to convert between units:
+`date_range` doesn't yet support non-nano resolutions. But `as_unit` or `astype` can be used to convert between units:
+
+--
+count: false
 
 ```python
->>> pd.Timestamp("1000-01-01").as_unit("us").unit
-'us'
+In[1]: dr = pd.date_range("2020-01-01", periods=3, freq="D")
+In[2]: dr
+Out[2]: DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[ns]', freq='D')
+```
+--
+count: false
+
+```python
+In[3]: dr.as_unit("s")
+Out[3]: DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
+```
+--
+count: false
+
+```python
+In[3]: dr.astype("datetime64[s]")
+Out[3]: DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
 ```
 
-# TODO: astype, np array
+---
+count: false
+
+## How to enable the new resolutions
+
+`date_range` doesn't yet support non-nano resolutions. But `as_unit` or `astype` can be used to convert between units:
+
+The resolution of NumPy arrays is preserved:
+
+```python
+In[4]: arr = np.array(['2007-07-13', '2006-01-13'], dtype='datetime64[ms]')
+In[5]: arr
+Out[5]:
+array(['2007-07-13T00:00:00.000', '2006-01-13T00:00:00.000'], dtype='datetime64[ms]')
+
+In[6]: pd.Series(arr)
+Out[6]:
+0   2007-07-13
+1   2006-01-13
+dtype: datetime64[ms]
+```
 
 ---
 
