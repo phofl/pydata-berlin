@@ -101,7 +101,7 @@ class: center, middle
 
 New features:
 
-- Index backed by all NumPy dtypes
+- Index backed by all numerical NumPy dtypes
 - Non-nanosecond datetime resolutions
 - Consistent datetime parsing
 
@@ -241,9 +241,6 @@ New behaviour in pandas 2.0: if no `format` is specified, the format will be gue
 #    - passing \`format='ISO8601'` if your strings are all ISO8601 but not necessarily in exactly the same format;
 #    - passing \`format='mixed'`, and the format will be inferred for each element individually. You might want to use `dayfirst` alongside this.
 ```
-
---
-count: false
 
 Full details: https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html
 
@@ -705,6 +702,8 @@ Using PyArrow arrays to store the data of a DataFrame.
 ![:scale 100%](img/pandas_arrow.svg)
 ]
 
+-> Check out Joris [talk about Arrow](https://pretalx.com/pyconde-pydata-berlin-2023/talk/H7ZCWK/) on Wednesday!
+
  _ __Apache Arrow__ defines a language-independent columnar memory format for flat and hierarchical data, organized_
 _for efficient analytic operations on modern hardware like CPUs and GPUs._
 ---
@@ -814,14 +813,6 @@ These implementations provide
 - significantly improved performance compared to NumPy's object dtype
 - smaller memory footprint
 
---
-count: false
-
-If the functionality does not exist in PyArrow
-
-- `"string[pyarrow]"` falls back to NumPy
-- `pd.ArrowDtype(pa.string())` raises.
-
 ---
 
 ## Let's look at some performance comparisons
@@ -909,6 +900,10 @@ Some I/O functions gained an `engine` keyword to parse the input with PyArrow.
 
 - `read_csv` and `read_json` can dispatch to PyArrow readers.
 - `read_parquet` and `read_orc` use PyArrow natively to read the input.
+
+???
+
+Mention that engine works without the pandas backend as well
 
 --
 count: false
