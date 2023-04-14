@@ -253,16 +253,19 @@ class: center, middle
 
 # Current situation: SettingWithCopyWarning
 
+.highlight-red[
 ```python
 >>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
 >>> subset = df[df["A"] > 1]
->>> subset.loc[1, "A"] = 10
-# SettingWithCopyWarning: 
-# A value is trying to be set on a copy of a slice from a DataFrame.
-# Try using .loc[row_indexer,col_indexer] = value instead
-#
-# See the caveats in the documentation: ...
+>>> subset.loc[1, "C"] = 10
+
+*# SettingWithCopyWarning: 
+*# A value is trying to be set on a copy of a slice from a DataFrame.
+*# Try using .loc[row_indexer,col_indexer] = value instead
+*#
+*# See the caveats in the documentation: ...
 ```
+]
 
 ---
 
@@ -420,18 +423,18 @@ A proposal for simplified behaviour using a single rule:
 
 Advantages:
 
-- **A simpler, more consistent user experience**
+- .section-highlight[A simpler, more consistent user experience]
 - We can get rid of the SettingWithCopyWarning (since there is no confusion about whether we are mutating a view or a copy)
 - We would no longer need defensive copying in many places in pandas, improving memory usage
 
 ---
 
-## Examples: filtering rows with a boolean mask
+## Previous example modifying a subset
 
 ```python
 >>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
 *>>> subset = df[df["A"] > 1]
->>> subset.loc[1, "A"] = 10
+>>> subset.loc[1, "C"] = 10
 ```
 
 Did `df` change as well?
@@ -441,56 +444,7 @@ count: false
 
 No, `subset` is a different object, so mutating `subset` does not change `df`.
 
----
-
-## Examples: slicing rows
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[1:2]
->>> subset.loc[1, "A"] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-No, `subset` is a different object, so mutating `subset` does not change `df`.
-
----
-
-## Examples: subsetting columns
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[["A", "B"]]
->>> subset.loc[1, "A"] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-No, `subset` is a different object, so mutating `subset` does not change `df`.
-
----
-
-## Examples: selecting a single column
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df["A"]
->>> subset[1] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-No, `subset` is a different object, so mutating `subset` does not change `df`.
+And the answer is the same regardless how `subset` was created (selecting rows or columns, with a slice, mask, or list indexer, ..)
 
 ---
 
@@ -503,14 +457,14 @@ A proposal for simplified behaviour using a single rule:
 Advantages:
 
 - A simpler, more consistent user experience
-- **We can get rid of the SettingWithCopyWarning** (since there is no confusion about whether we are mutating a view or a copy)
+- .section-highlight[We can get rid of the SettingWithCopyWarning] (since there is no confusion about whether we are mutating a view or a copy)
 - We would no longer need defensive copying in many places in pandas, improving memory usage
 
 ---
 
 # The SettingWithCopyWarning
 
-With current pandas:
+With current pandas (trying to update `df`):
 
 ```python
 >>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
@@ -522,7 +476,12 @@ With current pandas:
 --
 count: false
 
-With proposal: both examples don't work
+With new behaviour: both examples don't work
+
+```python
+>>> df["C"][df["A"] > 1] = 10  # this doesn't work
+>>> df[df["A"] > 1]["C"] = 10  # this doesn't work
+```
 
 --
 count: false
@@ -532,13 +491,40 @@ count: false
 >>> temp[temp["A"] > 1] = 10
 ```
 
-Chained assignment will never work -> we don't need a warning.
+Chained assignment will never work!
 
 ---
 
 # The SettingWithCopyWarning
 
-With current pandas:
+With current pandas (trying to update `df`):
+
+```python
+>>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
+# two examples of chained assignment
+>>> df["C"][df["A"] > 1] = 10  # this works
+>>> df[df["A"] > 1]["C"] = 10  # this doesn't work
+```
+
+With new behaviour: chained assignment will never work -> we don't need the general warning.
+
+But to help the transition, we can specifically warn about chained assignment not working:
+
+.highlight-red[
+```python
+>>> df["C"][df["A"] > 1] = 10
+
+*# ChainedAssignmentError: A value is trying to be set on a copy of a DataFrame
+*# or Series through chained assignment.
+*# When using the Copy-on-Write mode, such chained assignment never works ...
+```
+]
+
+---
+
+# The SettingWithCopyWarning
+
+With current pandas (not wanting to update `df`):
 
 ```python
 >>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
@@ -547,7 +533,7 @@ With current pandas:
 >>> subset["C"] = 10
 ```
 
-With proposal: additional `copy()` is no longer needed to avoid the warning.
+With new behaviour: additional `copy()` is no longer needed to avoid the warning.
 
 ---
 
@@ -561,21 +547,21 @@ Advantages:
 
 - A simpler, more consistent user experience
 - We can get rid of the SettingWithCopyWarning (since there is no confusion about whether we are mutating a view or a copy)
-- **We would no longer need defensive copying in many places in pandas, improving memory usage**
+- .section-highlight[We would no longer need defensive copying in many places in pandas, improving memory usage]
 
 ---
 
-## Hiding copy/view details with Copy-on-Write
+## Avoiding copies with Copy-on-Write
 
 Guarantee == "behaves as a copy"
 
-Copy-on-Write: usage of views becomes internal implementation detail
+The usage of view vs copy can become an internal implementation detail
 
--> We can avoid copies by default using Copy-on-Write!
+➔ We can avoid copies by default using Copy-on-Write!
 
 --
 
-**Small benchmark**: create DataFrame of 2 million rows and 30 columns (mix of float, ints and strings)
+**Small benchmark**: create DataFrame of 2 million rows by 30 columns (mix of float, integer and string columns)
 ```python
 import pandas as pd
 import numpy as np
@@ -590,13 +576,13 @@ df = pd.concat([int_df, float_df, str_df], axis=1)
 
 ---
 
-## Hiding copy/view details with Copy-on-Write
+## Avoiding copies with Copy-on-Write
 
 Guarantee == "behaves as a copy"
 
-Copy-on-Write: usage of views becomes internal implementation detail
+The usage of view vs copy can become an internal implementation detail
 
--> We can avoid copies by default using Copy-on-Write!
+➔ We can avoid copies by default using Copy-on-Write!
 
 ```python
 %%timeit
@@ -624,29 +610,43 @@ count: false
 
 ## Hiding copy/view details with Copy-on-Write
 
-When an operations makes an actual copy of the data (e.g. `df2 = df1.copy()`)
+When an operations makes an actual copy of the data<br>
+➔ each DataFrame references its own data
+
+```python
+df2 = df1.copy()
+```
 
 .center[
-![:scale 60%](img/copy-on-write_copy.svg)
+![:scale 50%](img/copy-on-write_copy.svg)
 ]
 
 ---
 ## Hiding copy/view details with Copy-on-Write
 
-When an operations gives a view (e.g. `df2 = df1.reset_index()`)
+When an operations can use a view for the result<br>
+➔ both reference the same data
+
+```python
+df2 = df1.reset_index()
+```
 
 .center[
-![:scale 60%](img/copy-on-write_view.svg)
+![:scale 50%](img/copy-on-write_view.svg)
 ]
-
 
 ---
 ## Hiding copy/view details with Copy-on-Write
 
-Modifying a view or its parent (`df1` or `df2`) will trigger a copy (a "copy on write"), and each DataFrame now owns its own memory.
+Modifying a view or its parent (`df1` or `df2`) will trigger a copy (a "copy on write")<br>
+➔ each DataFrame again owns its own memory.
+
+```python
+df2.loc[1, "C"] = 10
+```
 
 .center[
-![:scale 60%](img/copy-on-write_modified.svg)
+![:scale 50%](img/copy-on-write_modified.svg)
 ]
 
 
@@ -654,10 +654,14 @@ Modifying a view or its parent (`df1` or `df2`) will trigger a copy (a "copy on 
 ## Hiding copy/view details with Copy-on-Write
 
 Do you want to avoid this copy when modifying `df2`, and no longer need `df1`? 
-You can for example reassign to the same variable (`df1 = df1.reset_index()`, such that the original `df1` goes out of scope.
+You can for example reassign to the same variable such that the original `df1` goes out of scope.
+
+```python
+df1 = df1.reset_index()
+```
 
 .center[
-![:scale 60%](img/copy-on-write_reassign.svg)
+![:scale 50%](img/copy-on-write_reassign.svg)
 ]
 
 
@@ -681,17 +685,17 @@ Advantages:
 
 Enable it in pandas 2.0:
 
-```
+```python
 import pandas as pd
 pd.options.mode.copy_on_write = True
 ```
 
-More details: 
-
-* Blogpost: https://jorisvandenbossche.github.io/blog/2022/04/07/pandas-copy-views/
-* Full proposal: https://docs.google.com/document/d/1ZCQ9mx3LBMy-nhwRl33_jgcvWo9IWdEfxDNQ2thyTb0/edit#heading=h.iexejdstiz8u
-* Related GitHub issue: https://github.com/pandas-dev/pandas/issues/36195
-
+* We encourage you to try it out!
+* We expect it to become the default behaviour in pandas 3.0
+* Blogposts: 
+  * https://jorisvandenbossche.github.io/blog/2022/04/07/pandas-copy-views/
+  * https://medium.com/towards-data-science/a-solution-for-inconsistencies-in-indexing-operations-in-pandas-b76e10719744
+* Full proposal: `TODO add link`
 
 ## Feedback welcome!
 
