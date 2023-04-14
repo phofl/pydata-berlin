@@ -57,12 +57,14 @@ Joris Van den Bossche
 - Open source enthusiast: pandas core dev, geopandas maintainer, scikit-learn contributor
 - Currently working part-time at Voltron Data on Apache Arrow
 
-https://github.com/jorisvandenbossche   Twitter: [@jorisvdbossche](https://twitter.com/jorisvdbossche)
-
-
 .affiliations[
   ![:scale 30%](img/apache-arrow.png)
   ![:scale 64%](img/voltrondata-logo-green.png)
+]
+
+.center[
+<a href="https://twitter.com/jorisvdbossche"><img src="img/icon_twitter.svg" alt="Twitter logo" class="icon"> twitter.com/jorisvdbossche</a>
+<a href="https://github.com/jorisvandenbossche"><img src="img/icon_github.svg" alt="Github logo"  class="icon"> github.com/jorisvandenbossche</a>
 ]
 
 ---
@@ -81,7 +83,7 @@ https://github.com/phofl Website: https://phofl.github.io
 
 .center[
 .affiliations[
-  ![:scale 20%](img/dask.png)
+  ![:scale 35%](img/dask.png)
   ![:scale 30%](img/coiled.png)
 ]
 ]
@@ -107,6 +109,8 @@ New experimental features:
 
 - Copy-on-Write option
 - Arrow-backed DataFrames
+
+And many more! See full release notes at https://pandas.pydata.org/docs/whatsnew/v2.0.0.html
 
 ---
 
@@ -152,23 +156,23 @@ Timestamps can be created in the following units:
 count: false
 
 ```python
-In[1]: dr = pd.date_range("2020-01-01", periods=3, freq="D")
-In[2]: dr
-Out[2]: DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[ns]', freq='D')
+>>> dr = pd.date_range("2020-01-01", periods=3, freq="D")
+>>> dr
+DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[ns]', freq='D')
 ```
 --
 count: false
 
 ```python
-In[3]: dr.as_unit("s")
-Out[3]: DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
+>>> dr.as_unit("s")
+DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
 ```
 --
 count: false
 
 ```python
-In[3]: dr.astype("datetime64[s]")
-Out[3]: DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
+>>> dr.astype("datetime64[s]")
+DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
 ```
 
 ---
@@ -181,13 +185,11 @@ count: false
 The resolution of NumPy arrays is preserved:
 
 ```python
-In[4]: arr = np.array(['2007-07-13', '2006-01-13'], dtype='datetime64[ms]')
-In[5]: arr
-Out[5]:
+>>> arr = np.array(['2007-07-13', '2006-01-13'], dtype='datetime64[ms]')
+>>> arr
 array(['2007-07-13T00:00:00.000', '2006-01-13T00:00:00.000'], dtype='datetime64[ms]')
 
-In[6]: pd.Series(arr)
-Out[6]:
+>>> pd.Series(arr)
 0   2007-07-13
 1   2006-01-13
 dtype: datetime64[ms]
@@ -228,21 +230,22 @@ DatetimeIndex([`'2000-12-01', '2000-01-13'`], dtype='datetime64[ns]', freq=None)
 --
 count: false
 
-New behaviour: if not `format` is specified, the format will be guessed from the first string and applied to all values
+New behaviour in pandas 2.0: if no `format` is specified, the format will be guessed from the first string and applied to all values
 
-```
+```python
 >>> pd.to_datetime(['12-01-2000 00:00:00', '13-01-2000 00:00:00'])
 ...
-ValueError: time data "13-01-2000 00:00:00" doesn't match format "%m-%d-%Y %H:%M:%S", at position 1. You might want to try:
-    - passing \`format` if your strings have a consistent format;
-    - passing \`format='ISO8601'` if your strings are all ISO8601 but not necessarily in exactly the same format;
-    - passing \`format='mixed'`, and the format will be inferred for each element individually. You might want to use `dayfirst` alongside this.
+# ValueError: time data "13-01-2000 00:00:00" doesn't match format "%m-%d-%Y %H:%M:%S".
+# You might want to try:
+#    - passing \`format` if your strings have a consistent format;
+#    - passing \`format='ISO8601'` if your strings are all ISO8601 but not necessarily in exactly the same format;
+#    - passing \`format='mixed'`, and the format will be inferred for each element individually. You might want to use `dayfirst` alongside this.
 ```
 
 --
 count: false
 
-Implemented in pandas 2.0! (full details: https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html)
+Full details: https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html
 
 ---
 class: center, middle
@@ -255,16 +258,19 @@ class: center, middle
 
 # Current situation: SettingWithCopyWarning
 
+.highlight-red[
 ```python
 >>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
 >>> subset = df[df["A"] > 1]
->>> subset.loc[1, "A"] = 10
-# SettingWithCopyWarning: 
-# A value is trying to be set on a copy of a slice from a DataFrame.
-# Try using .loc[row_indexer,col_indexer] = value instead
-#
-# See the caveats in the documentation: ...
+>>> subset.loc[1, "C"] = 10
+
+*# SettingWithCopyWarning:
+*# A value is trying to be set on a copy of a slice from a DataFrame.
+*# Try using .loc[row_indexer,col_indexer] = value instead
+*#
+*# See the caveats in the documentation: ...
 ```
+]
 
 ---
 
@@ -422,18 +428,18 @@ A proposal for simplified behaviour using a single rule:
 
 Advantages:
 
-- **A simpler, more consistent user experience**
+- .section-highlight[A simpler, more consistent user experience]
 - We can get rid of the SettingWithCopyWarning (since there is no confusion about whether we are mutating a view or a copy)
 - We would no longer need defensive copying in many places in pandas, improving memory usage
 
 ---
 
-## Examples: filtering rows with a boolean mask
+## Previous example modifying a subset
 
 ```python
 >>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
 *>>> subset = df[df["A"] > 1]
->>> subset.loc[1, "A"] = 10
+>>> subset.loc[1, "C"] = 10
 ```
 
 Did `df` change as well?
@@ -443,56 +449,7 @@ count: false
 
 No, `subset` is a different object, so mutating `subset` does not change `df`.
 
----
-
-## Examples: slicing rows
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[1:2]
->>> subset.loc[1, "A"] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-No, `subset` is a different object, so mutating `subset` does not change `df`.
-
----
-
-## Examples: subsetting columns
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df[["A", "B"]]
->>> subset.loc[1, "A"] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-No, `subset` is a different object, so mutating `subset` does not change `df`.
-
----
-
-## Examples: selecting a single column
-
-```python
->>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
-*>>> subset = df["A"]
->>> subset[1] = 10
-```
-
-Did `df` change as well?
-
---
-count: false
-
-No, `subset` is a different object, so mutating `subset` does not change `df`.
+And the answer is the same regardless how `subset` was created (selecting rows or columns, with a slice, mask, or list indexer, ..)
 
 ---
 
@@ -505,14 +462,14 @@ A proposal for simplified behaviour using a single rule:
 Advantages:
 
 - A simpler, more consistent user experience
-- **We can get rid of the SettingWithCopyWarning** (since there is no confusion about whether we are mutating a view or a copy)
+- .section-highlight[We can get rid of the SettingWithCopyWarning] (since there is no confusion about whether we are mutating a view or a copy)
 - We would no longer need defensive copying in many places in pandas, improving memory usage
 
 ---
 
 # The SettingWithCopyWarning
 
-With current pandas:
+With current pandas (trying to update `df`):
 
 ```python
 >>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
@@ -524,7 +481,12 @@ With current pandas:
 --
 count: false
 
-With proposal: both examples don't work
+With new behaviour: both examples don't work
+
+```python
+>>> df["C"][df["A"] > 1] = 10  # this doesn't work
+>>> df[df["A"] > 1]["C"] = 10  # this doesn't work
+```
 
 --
 count: false
@@ -534,13 +496,40 @@ count: false
 >>> temp[temp["A"] > 1] = 10
 ```
 
-Chained assignment will never work -> we don't need a warning.
+Chained assignment will never work!
 
 ---
 
 # The SettingWithCopyWarning
 
-With current pandas:
+With current pandas (trying to update `df`):
+
+```python
+>>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
+# two examples of chained assignment
+>>> df["C"][df["A"] > 1] = 10  # this works
+>>> df[df["A"] > 1]["C"] = 10  # this doesn't work
+```
+
+With new behaviour: chained assignment will never work -> we don't need the general warning.
+
+But to help the transition, we can specifically warn about chained assignment not working:
+
+.highlight-red[
+```python
+>>> df["C"][df["A"] > 1] = 10
+
+*# ChainedAssignmentError: A value is trying to be set on a copy of a DataFrame
+*# or Series through chained assignment.
+*# When using the Copy-on-Write mode, such chained assignment never works ...
+```
+]
+
+---
+
+# The SettingWithCopyWarning
+
+With current pandas (not wanting to update `df`):
 
 ```python
 >>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4], "C": [5, 6]})
@@ -549,7 +538,7 @@ With current pandas:
 >>> subset["C"] = 10
 ```
 
-With proposal: additional `copy()` is no longer needed to avoid the warning.
+With new behaviour: additional `copy()` is no longer needed to avoid the warning.
 
 ---
 
@@ -563,21 +552,21 @@ Advantages:
 
 - A simpler, more consistent user experience
 - We can get rid of the SettingWithCopyWarning (since there is no confusion about whether we are mutating a view or a copy)
-- **We would no longer need defensive copying in many places in pandas, improving memory usage**
+- .section-highlight[We would no longer need defensive copying in many places in pandas, improving memory usage]
 
 ---
 
-## Hiding copy/view details with Copy-on-Write
+## Avoiding copies with Copy-on-Write
 
 Guarantee == "behaves as a copy"
 
-Copy-on-Write: usage of views becomes internal implementation detail
+The usage of view vs copy can become an internal implementation detail
 
--> We can avoid copies by default using Copy-on-Write!
+➔ We can avoid copies by default using Copy-on-Write!
 
 --
 
-**Small benchmark**: create DataFrame of 2 million rows and 30 columns (mix of float, ints and strings)
+**Small benchmark**: create DataFrame of 2 million rows by 30 columns (mix of float, integer and string columns)
 ```python
 import pandas as pd
 import numpy as np
@@ -592,13 +581,13 @@ df = pd.concat([int_df, float_df, str_df], axis=1)
 
 ---
 
-## Hiding copy/view details with Copy-on-Write
+## Avoiding copies with Copy-on-Write
 
 Guarantee == "behaves as a copy"
 
-Copy-on-Write: usage of views becomes internal implementation detail
+The usage of view vs copy can become an internal implementation detail
 
--> We can avoid copies by default using Copy-on-Write!
+➔ We can avoid copies by default using Copy-on-Write!
 
 ```python
 %%timeit
@@ -626,29 +615,43 @@ count: false
 
 ## Hiding copy/view details with Copy-on-Write
 
-When an operations makes an actual copy of the data (e.g. `df2 = df1.copy()`)
+When an operations makes an actual copy of the data<br>
+➔ each DataFrame references its own data
+
+```python
+df2 = df1.copy()
+```
 
 .center[
-![:scale 60%](img/copy-on-write_copy.svg)
+![:scale 50%](img/copy-on-write_copy.svg)
 ]
 
 ---
 ## Hiding copy/view details with Copy-on-Write
 
-When an operations gives a view (e.g. `df2 = df1.reset_index()`)
+When an operations can use a view for the result<br>
+➔ both reference the same data
+
+```python
+df2 = df1.reset_index()
+```
 
 .center[
-![:scale 60%](img/copy-on-write_view.svg)
+![:scale 50%](img/copy-on-write_view.svg)
 ]
-
 
 ---
 ## Hiding copy/view details with Copy-on-Write
 
-Modifying a view or its parent (`df1` or `df2`) will trigger a copy (a "copy on write"), and each DataFrame now owns its own memory.
+Modifying a view or its parent (`df1` or `df2`) will trigger a copy (a "copy on write")<br>
+➔ each DataFrame again owns its own memory.
+
+```python
+df2.loc[1, "C"] = 10
+```
 
 .center[
-![:scale 60%](img/copy-on-write_modified.svg)
+![:scale 50%](img/copy-on-write_modified.svg)
 ]
 
 
@@ -656,26 +659,15 @@ Modifying a view or its parent (`df1` or `df2`) will trigger a copy (a "copy on 
 ## Hiding copy/view details with Copy-on-Write
 
 Do you want to avoid this copy when modifying `df2`, and no longer need `df1`? 
-You can for example reassign to the same variable (`df1 = df1.reset_index()`, such that the original `df1` goes out of scope.
+You can for example reassign to the same variable such that the original `df1` goes out of scope.
+
+```python
+df1 = df1.reset_index()
+```
 
 .center[
-![:scale 60%](img/copy-on-write_reassign.svg)
+![:scale 50%](img/copy-on-write_reassign.svg)
 ]
-
-
----
-
-# Can we do better?
-
-A proposal for simplified behaviour using a single rule:
-
-> *Any DataFrame or Series derived from another in any way (e.g. with an indexing operation) always *behaves as* a copy.*
-
-Advantages:
-
-- A simpler, more consistent user experience
-- We can get rid of the SettingWithCopyWarning (since there is no confusion about whether we are mutating a view or a copy)
-- We would no longer need defensive copying in many places in pandas, improving memory usage
 
 ---
 
@@ -683,20 +675,24 @@ Advantages:
 
 Enable it in pandas 2.0:
 
-```
+```python
 import pandas as pd
 pd.options.mode.copy_on_write = True
 ```
 
-More details: 
-
-* Blogpost: https://jorisvandenbossche.github.io/blog/2022/04/07/pandas-copy-views/
-* Full proposal: https://docs.google.com/document/d/1ZCQ9mx3LBMy-nhwRl33_jgcvWo9IWdEfxDNQ2thyTb0/edit#heading=h.iexejdstiz8u
-* Related GitHub issue: https://github.com/pandas-dev/pandas/issues/36195
-
+* We encourage you to try it out!
+* We expect it to become the default behaviour in pandas 3.0
+* Blogposts:
+  * https://jorisvandenbossche.github.io/blog/2022/04/07/pandas-copy-views/
+  * https://medium.com/towards-data-science/a-solution-for-inconsistencies-in-indexing-operations-in-pandas-b76e10719744
+* Full proposal: `TODO add link`
 
 ## Feedback welcome!
 
+---
+class: center, middle
+
+# Arrow-backed DataFrames
 
 ---
 
@@ -935,7 +931,6 @@ count: false
 .larger[This means:]
 
 - The Arrow-backend is not yet supported everywhere.
-
   - Can lead to performance problems
   - Potential bugs
   - `GroupBy` and `merge` are popular examples.
@@ -952,10 +947,8 @@ count: false
 --
 count: false
 
-* pandas will continue working on supporting PyArrow everywhere.
-
-  This goal is reached when PyArrow-dtypes and NumPy-dtypes are both equally well supported.
-
+* pandas will continue working on supporting PyArrow everywhere.<br>
+  This goal is reached when PyArrow-dtypes and NumPy-dtypes are both equally well supported.<br>
   Ensure support for new available dtypes (Decimal, bytes, ...).
 
 --
@@ -963,6 +956,11 @@ count: false
 
 * Provide a way for users to opt into PyArrow-backed DataFrames globally.
 
+
+---
+class: center, middle
+
+# Pandas Enhancement Proposals (PDEPs)
 
 ---
 
@@ -974,7 +972,6 @@ See "PDEP-1: Purpose and guidelines" for the details: https://pandas.pydata.org/
 
 
 
-
 ---
 
 # PDEP-8: In-place methods in pandas
@@ -983,6 +980,20 @@ Proposal to:
 
 - The ``inplace`` parameter will be removed from any methods that never can be done inplace
 
+
+---
+
+# Thanks to all contributors!
+
+Pandas is a community project, and everything we talked about is the result of this community of contributors
+
+
+--
+count: false
+
+You can become part of this community as well!
+
+➔ "Let's contribute to pandas" workshop tomorrow afternoon
 
     </textarea>
 <!--    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
