@@ -57,12 +57,14 @@ Joris Van den Bossche
 - Open source enthusiast: pandas core dev, geopandas maintainer, scikit-learn contributor
 - Currently working part-time at Voltron Data on Apache Arrow
 
-https://github.com/jorisvandenbossche   Twitter: [@jorisvdbossche](https://twitter.com/jorisvdbossche)
-
-
 .affiliations[
   ![:scale 30%](img/apache-arrow.png)
   ![:scale 64%](img/voltrondata-logo-green.png)
+]
+
+.center[
+<a href="https://twitter.com/jorisvdbossche"><img src="img/icon_twitter.svg" alt="Twitter logo" class="icon"> twitter.com/jorisvdbossche</a>
+<a href="https://github.com/jorisvandenbossche"><img src="img/icon_github.svg" alt="Github logo"  class="icon"> github.com/jorisvandenbossche</a>
 ]
 
 ---
@@ -80,7 +82,7 @@ https://github.com/phofl
 
 
 .affiliations[
-  ![:scale 20%](img/dask.png)
+  ![:scale 35%](img/dask.png)
   ![:scale 30%](img/coiled.png)
 ]
 ---
@@ -105,6 +107,8 @@ New experimental features:
 
 - Copy-on-Write option
 - Arrow-backed DataFrames
+
+And many more! See full release notes at https://pandas.pydata.org/docs/whatsnew/v2.0.0.html
 
 ---
 
@@ -150,23 +154,23 @@ Timestamps can be created in the following units:
 count: false
 
 ```python
-In[1]: dr = pd.date_range("2020-01-01", periods=3, freq="D")
-In[2]: dr
-Out[2]: DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[ns]', freq='D')
+>>> dr = pd.date_range("2020-01-01", periods=3, freq="D")
+>>> dr
+DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[ns]', freq='D')
 ```
 --
 count: false
 
 ```python
-In[3]: dr.as_unit("s")
-Out[3]: DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
+>>> dr.as_unit("s")
+DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
 ```
 --
 count: false
 
 ```python
-In[3]: dr.astype("datetime64[s]")
-Out[3]: DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
+>>> dr.astype("datetime64[s]")
+DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
 ```
 
 ---
@@ -179,13 +183,11 @@ count: false
 The resolution of NumPy arrays is preserved:
 
 ```python
-In[4]: arr = np.array(['2007-07-13', '2006-01-13'], dtype='datetime64[ms]')
-In[5]: arr
-Out[5]:
+>>> arr = np.array(['2007-07-13', '2006-01-13'], dtype='datetime64[ms]')
+>>> arr
 array(['2007-07-13T00:00:00.000', '2006-01-13T00:00:00.000'], dtype='datetime64[ms]')
 
-In[6]: pd.Series(arr)
-Out[6]:
+>>> pd.Series(arr)
 0   2007-07-13
 1   2006-01-13
 dtype: datetime64[ms]
@@ -226,21 +228,22 @@ DatetimeIndex([`'2000-12-01', '2000-01-13'`], dtype='datetime64[ns]', freq=None)
 --
 count: false
 
-New behaviour: if not `format` is specified, the format will be guessed from the first string and applied to all values
+New behaviour in pandas 2.0: if no `format` is specified, the format will be guessed from the first string and applied to all values
 
-```
+```python
 >>> pd.to_datetime(['12-01-2000 00:00:00', '13-01-2000 00:00:00'])
 ...
-ValueError: time data "13-01-2000 00:00:00" doesn't match format "%m-%d-%Y %H:%M:%S", at position 1. You might want to try:
-    - passing \`format` if your strings have a consistent format;
-    - passing \`format='ISO8601'` if your strings are all ISO8601 but not necessarily in exactly the same format;
-    - passing \`format='mixed'`, and the format will be inferred for each element individually. You might want to use `dayfirst` alongside this.
+# ValueError: time data "13-01-2000 00:00:00" doesn't match format "%m-%d-%Y %H:%M:%S".
+# You might want to try:
+#    - passing \`format` if your strings have a consistent format;
+#    - passing \`format='ISO8601'` if your strings are all ISO8601 but not necessarily in exactly the same format;
+#    - passing \`format='mixed'`, and the format will be inferred for each element individually. You might want to use `dayfirst` alongside this.
 ```
 
 --
 count: false
 
-Implemented in pandas 2.0! (full details: https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html)
+Full details: https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html
 
 ---
 class: center, middle
@@ -664,21 +667,6 @@ df1 = df1.reset_index()
 ![:scale 50%](img/copy-on-write_reassign.svg)
 ]
 
-
----
-
-# Can we do better?
-
-A proposal for simplified behaviour using a single rule:
-
-> *Any DataFrame or Series derived from another in any way (e.g. with an indexing operation) always *behaves as* a copy.*
-
-Advantages:
-
-- A simpler, more consistent user experience
-- We can get rid of the SettingWithCopyWarning (since there is no confusion about whether we are mutating a view or a copy)
-- We would no longer need defensive copying in many places in pandas, improving memory usage
-
 ---
 
 # How do I try this?
@@ -699,6 +687,10 @@ pd.options.mode.copy_on_write = True
 
 ## Feedback welcome!
 
+---
+class: center, middle
+
+# Arrow-backed DataFrames
 
 ---
 
@@ -937,7 +929,6 @@ count: false
 .larger[This means:]
 
 - The Arrow-backend is not yet supported everywhere.
-
   - Can lead to performance problems
   - Potential bugs
   - `GroupBy` and `merge` are popular examples.
@@ -954,10 +945,8 @@ count: false
 --
 count: false
 
-* pandas will continue working on supporting PyArrow everywhere.
-
-  This goal is reached when PyArrow-dtypes and NumPy-dtypes are both equally well supported.
-
+* pandas will continue working on supporting PyArrow everywhere.<br>
+  This goal is reached when PyArrow-dtypes and NumPy-dtypes are both equally well supported.<br>
   Ensure support for new dtypes that are available (Decimal, bytes, ...).
 
 --
@@ -965,6 +954,11 @@ count: false
 
 * Provide a way for users to opt into PyArrow-backed DataFrames globally.
 
+
+---
+class: center, middle
+
+# Pandas Enhancement Proposals (PDEPs)
 
 ---
 
@@ -976,7 +970,6 @@ See "PDEP-1: Purpose and guidelines" for the details: https://pandas.pydata.org/
 
 
 
-
 ---
 
 # PDEP-8: In-place methods in pandas
@@ -985,6 +978,20 @@ Proposal to:
 
 - The ``inplace`` parameter will be removed from any methods that never can be done inplace
 
+
+---
+
+# Thanks to all contributors!
+
+Pandas is a community project, and everything we talked about is the result of this community of contributors
+
+
+--
+count: false
+
+You can become part of this community as well!
+
+➔ "Let's contribute to pandas" workshop tomorrow afternoon
 
     </textarea>
 <!--    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
