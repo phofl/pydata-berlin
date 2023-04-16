@@ -54,7 +54,7 @@ Joris Van den Bossche
 <div style="margin-bottom:-20px"></div>
 
 - Background: PhD bio-science engineer, air quality research
-- Open source enthusiast: pandas core dev, geopandas maintainer, scikit-learn contributor
+- Open source enthusiast: core developer of pandas, GeoPandas, Shapely, Apache Arrow, ...
 - Currently working part-time at Voltron Data on Apache Arrow
 
 .affiliations[
@@ -644,8 +644,12 @@ Modifying a view or its parent (`df1` or `df2`) will trigger a copy (a "copy on 
 ➔ each DataFrame again owns its own memory.
 
 ```python
+df2 = df1.reset_index()
 df2.loc[1, "C"] = 10
 ```
+
+<div style="margin-bottom:-1.5rem"></div>
+
 
 .center[
 ![:scale 50%](img/copy-on-write_modified.svg)
