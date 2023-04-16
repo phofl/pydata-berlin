@@ -815,7 +815,7 @@ These implementations provide
 
 ---
 
-## Let's look at some performance comparisons
+## Let's look at some performance/memory comparisons
 
 ```python
 import string
@@ -834,7 +834,7 @@ ser_string = ser_object.astype("string[pyarrow]")
 
 ---
 
-## Let's look at some performance comparisons
+## Let's look at some performance/memory comparisons
 
 --
 count: false
@@ -862,6 +862,21 @@ In[4]: %timeit ser_string.str.startswith("a")
 11 ms ± 19.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
 
 ```
+
+---
+count: false
+## Let's look at some performance/memory comparisons
+
+### memory footprint
+
+```python
+In [5]: "{:.2f} MiB".format(ser_object.memory_usage(deep=True) / 1024**2)
+Out[5]: '106.82 MiB'
+
+In [6]: "{:.2f} MiB".format(ser_string.memory_usage(deep=True) / 1024**2)
+Out[6]: '56.28 MiB'
+```
+
 ---
 ## Opting into Arrow-backed DataFrames
 
