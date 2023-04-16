@@ -980,16 +980,38 @@ A PDEP is a proposal for a major change in pandas, in a similar way as a Python 
 
 See "PDEP-1: Purpose and guidelines" for the details: https://pandas.pydata.org/pdeps/0001-purpose-and-guidelines.html
 
+--
+count: false
 
+Currently open PDEPs (https://pandas.pydata.org/about/roadmap.html):
+
+* PDEP-6: Ban upcasting in setitem-like operations
+* PDEP-7: Consistent copy/view semantics in pandas with Copy-on-Write
+* PDEP-8: Inplace methods in pandas
+* PDEP-9: Allow third-party projects to register pandas connectors with a standard API
 
 ---
 
 # PDEP-8: In-place methods in pandas
 
-Proposal to:
+Proposal (still being discussed!):
 
-- The ``inplace`` parameter will be removed from any methods that never can be done inplace
+- The ``inplace`` parameter will be deprecated and removed from any method that can never be done inplace
+- The `inplace` parameter is only kept only in a few methods such as `fillna`
 
+For example, replace
+
+```python
+df.reset_index(inplace=True)
+```
+
+with
+
+```python
+df = df.reset_index()
+```
+
+Full proposal: https://github.com/pandas-dev/pandas/pull/51466
 
 ---
 
@@ -997,13 +1019,24 @@ Proposal to:
 
 Pandas is a community project, and everything we talked about is the result of this community of contributors
 
+A total of 260 people contributed to the 2.0 release! (and that's only counting commits on the main repo)
 
 --
 count: false
 
-You can become part of this community as well!
+<div style="margin-bottom:50px"></div>
 
-➔ "Let's contribute to pandas" workshop tomorrow afternoon
+.larger[You can become part of this community as well!
+
+➔ "Let's contribute to pandas" workshop tomorrow afternoon (2-5pm)]
+
+--
+count: false
+
+<div style="margin-bottom:50px"></div>
+
+
+.larger[Those slides: https://github.com/phofl/pydata-berlin/]
 
     </textarea>
 <!--    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
