@@ -158,21 +158,21 @@ count: false
 ```python
 >>> dr = pd.date_range("2020-01-01", periods=3, freq="D")
 >>> dr
-DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[ns]', freq='D')
+DatetimeIndex(['2020-01-01', '2020-01-02'], dtype=`'datetime64[ns]'`, freq='D')
 ```
 --
 count: false
 
 ```python
 >>> dr.as_unit("s")
-DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
+DatetimeIndex(['2020-01-01', '2020-01-02'], dtype=`'datetime64[s]'`, freq='D')
 ```
 --
 count: false
 
 ```python
 >>> dr.astype("datetime64[s]")
-DatetimeIndex(['2020-01-01', '2020-01-02'], dtype='datetime64[s]', freq='D')
+DatetimeIndex(['2020-01-01', '2020-01-02'], dtype=`'datetime64[s]'`, freq='D')
 ```
 
 ---
@@ -187,12 +187,12 @@ The resolution of NumPy arrays is preserved:
 ```python
 >>> arr = np.array(['2007-07-13', '2006-01-13'], dtype='datetime64[ms]')
 >>> arr
-array(['2007-07-13T00:00:00.000', '2006-01-13T00:00:00.000'], dtype='datetime64[ms]')
+array(['2007-07-13T00:00:00.000', '2006-01-13T00:00:00.000'], dtype=`'datetime64[ms]'`)
 
 >>> pd.Series(arr)
 0   2007-07-13
 1   2006-01-13
-dtype: datetime64[ms]
+dtype: `datetime64[ms]`
 ```
 
 ---
