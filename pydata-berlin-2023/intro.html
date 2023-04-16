@@ -702,10 +702,10 @@ Using PyArrow arrays to store the data of a DataFrame.
 ![:scale 100%](img/pandas_arrow.svg)
 ]
 
--> Check out Joris [talk about Arrow](https://pretalx.com/pyconde-pydata-berlin-2023/talk/H7ZCWK/) on Wednesday!
-
  _ __Apache Arrow__ defines a language-independent columnar memory format for flat and hierarchical data, organized_
 _for efficient analytic operations on modern hardware like CPUs and GPUs._
+
+.larger[&rarr;] Check out Joris [talk about Arrow](https://pretalx.com/pyconde-pydata-berlin-2023/talk/H7ZCWK/) on Wednesday!
 ---
 
 ## ArrowDtype
@@ -721,13 +721,13 @@ count: false
 0   1
 1   2
 2   3
-dtype: int64[pyarrow]
+dtype: `int64[pyarrow]`
 
 >>> pd.Series([1, 2, 3], dtype="int64[pyarrow]")
 0   1
 1   2
 2   3
-dtype: int64[pyarrow]
+dtype: `int64[pyarrow]`
 ```
 
 --
@@ -758,7 +758,7 @@ count: false
 In [5]: ser_arrow = ser.astype(pd.ArrowDtype(pa.int64()))
 
 In [6]: %timeit ser_arrow.unique()
-6.71 ms ± 6.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+*6.71 ms ± 6.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
 ```
 
 --
@@ -846,7 +846,7 @@ In[1]: %timeit ser_object.str.len()
 118 ms ± 260 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
 
 In[2]: %timeit ser_string.str.len()
-24.2 ms ± 187 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+*24.2 ms ± 187 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
 ```
 
 --
@@ -859,7 +859,7 @@ In[3]: %timeit ser_object.str.startswith("a")
 136 ms ± 300 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
 
 In[4]: %timeit ser_string.str.startswith("a")
-11 ms ± 19.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+*11 ms ± 19.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
 
 ```
 
@@ -874,7 +874,7 @@ In [5]: "{:.2f} MiB".format(ser_object.memory_usage(deep=True) / 1024**2)
 Out[5]: '106.82 MiB'
 
 In [6]: "{:.2f} MiB".format(ser_string.memory_usage(deep=True) / 1024**2)
-Out[6]: '56.28 MiB'
+*Out[6]: '56.28 MiB'
 ```
 
 ---
